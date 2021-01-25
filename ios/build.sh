@@ -63,7 +63,8 @@ do
     lib="install-${platform}/lib/libtdjson.dylib"
     lib_simulator="install-${platform}-simulator/lib/libtdjson.dylib"
     mkdir -p $platform
-    lipo -create $lib $lib_simulator -o $platform/libtdjson.dylib
+    mv $lib $platform/libtdjson.dylib
+    mv $lib_simulator $platform/libtdjson-simulator.dylib
     install_name_tool -id @rpath/libtdjson.dylib $platform/libtdjson.dylib
   fi
 
