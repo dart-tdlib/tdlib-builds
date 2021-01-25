@@ -1,0 +1,73 @@
+name: iOS build
+on: push
+
+jobs:
+  macos:
+    name: Build on macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Install packages
+        run: |
+          sudo chown -R `whoami`:admin /usr/local/share
+          brew install gperf cmake coreutils ninja
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Clone and reset tdlib
+        run: |
+          git clone https://github.com/tdlib/td ~/td
+          cd ~/td
+          git reset --hard $(cat /Users/runner/work/tdlib-builds/tdlib-builds/hash)
+      - name: Copy build scripts
+        run: |
+          rm -rf ~/td/example/ios
+          mv ios ~/td/example/ios
+      - name: Clone OpenSSL prebuilts
+        run: |
+          cd ~/td/example/ios
+          git clone https://github.com/dart-tdlib/openssl-prebuilts -b iOS
+          mv openssl-prebuilts/third_party .
+      - name: Prepare for cross compilation
+        run: |
+          cd ~/td
+          mkdir native-build
+          cd native-build
+          cmake ..
+          cmake --build . --target prepare_cross_compiling
+      - name: Build TDLib
+        run: |
+          cd ~/td/example/ios
+          chmod a+x *.sh
+          bash build.sh || exit 1
+      - name: Zip compiled libraries
+        id: zip_libraries
+        run: |
+          cd ~/td/example/ios
+          zip -r9 tdjson.zip tdjson
+
+          echo "::set-output name=hash::$(cat /Users/runner/work/tdlib-builds/tdlib-builds/hash)"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: ${{ github.run_id }}
+          release_name: iOS release, TDLib repo hash - ${{ steps.zip_libraries.outputs.hash }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: /Users/runner/td/example/ios/tdjson.zip
+          asset_name: tdjson.zip
+          asset_content_type: application/zip
+          

@@ -1,0 +1,68 @@
+name: Android build
+on: push
+
+jobs:
+  linux:
+    name: Build on linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Install packages
+        run: |
+          sudo apt-get install make git zlib1g-dev libssl-dev gperf cmake g++ -y ninja-build ccache
+      - name: Clone and reset tdlib
+        run: |
+          git clone https://github.com/tdlib/td ~/td
+          cd ~/td
+          git reset --hard $(cat /home/runner/work/tdlib-builds/tdlib-builds/hash)
+      - name: Grab Android NDK
+        run: |
+          wget -q -O ~/ndk.zip https://dl.google.com/android/repository/android-ndk-r21d-linux-x86_64.zip
+          unzip -q ~/ndk.zip -d ~
+      - name: Copy build scripts
+        run: |
+          mv android ~/td/example
+      - name: Clone OpenSSL prebuilts
+        run: |
+          cd ~/td/example/android
+          git clone https://github.com/dart-tdlib/openssl-prebuilts -b Android
+          mv openssl-prebuilts/third_party .
+      - name: Build TDLib
+        run: |
+          cd ~/td/example/android
+          chmod a+x *.sh
+          bash export.sh || exit 1
+      - name: Zip compiled libraries
+        id: zip_libraries
+        run: |
+          cd ~/td/example/android
+          zip -r9 libs.zip libs
+          rm libs/*/*.debug
+
+          echo "::set-output name=hash::$(cat /home/runner/work/tdlib-builds/tdlib-builds/hash)"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: ${{ github.run_id }}
+          release_name: Android release, TDLib repo hash - ${{ steps.zip_libraries.outputs.hash }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: /home/runner/td/example/android/libs.zip
+          asset_name: libtdjsonandroid.zip
+          asset_content_type: application/zip
+          
