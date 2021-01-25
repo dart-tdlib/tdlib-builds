@@ -41,8 +41,8 @@ jobs:
         id: zip_libraries
         run: |
           cd ~/td/example/android
-          zip -r9 libs.zip libs
           rm libs/*/*.debug
+          zip -r9 libs.zip libs
 
           echo "::set-output name=hash::$(cat /home/runner/work/tdlib-builds/tdlib-builds/hash)"
       - name: Create Release
