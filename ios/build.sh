@@ -63,13 +63,16 @@ do
     lib="install-${platform}/lib/libtdjson.dylib"
     lib_simulator="install-${platform}-simulator/lib/libtdjson.dylib"
     mkdir -p $platform
+  
+    install_name_tool -id @rpath/libtdjson.dylib $lib
+    install_name_tool -id @rpath/libtdjson.dylib $lib_simulator
+
     mv $lib $platform/libtdjson.dylib
     mv $lib_simulator $platform/libtdjson-simulator.dylib
-    install_name_tool -id @rpath/libtdjson.dylib $platform/libtdjson.dylib
   fi
 
   mkdir -p ../tdjson/$platform/include
   rsync --recursive ${install}/include/ ../tdjson/${platform}/include/
   mkdir -p ../tdjson/$platform/lib
-  cp $platform/libtdjson.dylib ../tdjson/$platform/lib/
+  cp $platform/*.dylib ../tdjson/$platform/lib/
 done
