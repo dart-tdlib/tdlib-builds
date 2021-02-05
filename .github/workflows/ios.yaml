@@ -18,7 +18,7 @@ jobs:
       - name: Install packages
         run: |
           sudo chown -R `whoami`:admin /usr/local/share
-          brew install gperf cmake coreutils ninja
+          brew install gperf cmake coreutils ninja tree
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
       - name: Clone and reset tdlib
         run: |

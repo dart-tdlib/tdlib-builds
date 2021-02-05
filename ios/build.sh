@@ -66,7 +66,7 @@ do
   
     install_name_tool -id @rpath/libtdjson.dylib $lib
     install_name_tool -id @rpath/libtdjson.dylib $lib_simulator
-
+    tree /Users/runner/td/example/ios/build/
     mv $lib $platform/libtdjson.dylib
     mv $lib_simulator $platform/libtdjson-simulator.dylib
   fi
