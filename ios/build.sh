@@ -60,10 +60,9 @@ do
       make -j$(nproc) install || exit
       cd ..
     done
-    tree /Users/runner/td/example/ios
 
-    lib="install-${platform}/lib/libtdjson.dylib"
-    lib_simulator="install-${platform}-simulator/lib/libtdjson.dylib"
+    lib="build/install-${platform}/lib/libtdjson*.dylib"
+    lib_simulator="build/install-${platform}-simulator/lib/libtdjson*.dylib"
     mkdir -p $platform
   
     install_name_tool -id @rpath/libtdjson.dylib $lib
